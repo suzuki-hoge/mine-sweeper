@@ -1,0 +1,40 @@
+.dot {
+  background-color: gainsboro;
+  width: 20px;
+  height: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  border: solid 1px black;
+}
+
+.dot-One {
+  color: deepskyblue;
+}
+
+.dot-Two {
+  color: lawngreen;
+}
+
+.dot-Three {
+  color: burlywood;
+}
+
+.dot-Four {
+  color: mediumpurple;
+}
+
+.dot-Five {
+  color: darkcyan;
+}
+
+.dot-Six {
+  color: firebrick;
+}
+
+.dot-Seven {
+  color: lavender;
+}
+
+.dot-Eight {
+  color: fuchsia;
+}

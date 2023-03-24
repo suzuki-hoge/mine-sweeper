@@ -1,0 +1,10 @@
+.dots {
+  display: flex;
+  flex-direction: column;
+  row-gap: 3px;
+}
+
+.row {
+  display: flex;
+  column-gap: 3px;
+}
