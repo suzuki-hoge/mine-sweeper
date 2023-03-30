@@ -1,11 +1,12 @@
 use crate::game::Dot::{FlaggedMine, FlaggedSafe, Mine, Number, Unexplored, Wall};
-use crate::game::Swept::{Bomb, Safe, Stay};
+use crate::game::Swept::{Bomb, Clear, Safe, Stay};
 
 #[derive(Debug)]
 pub struct Game {
     w: usize,
     h: usize,
     dots: Vec<Vec<Dot>>,
+    unexplored_remains: usize,
 }
 
 impl Game {
@@ -16,7 +17,12 @@ impl Game {
             vec![Unexplored, Unexplored, Unexplored],
             vec![Mine, Unexplored, FlaggedMine],
         ];
-        Self { w, h, dots }
+        Self {
+            w,
+            h,
+            dots,
+            unexplored_remains: 7,
+        }
     }
 
     // 選択した箇所を更新し、選択結果を返す
@@ -41,6 +47,9 @@ impl Game {
                         }
                     }
                 }
+                if &self.dots[y][x] == &Unexplored {
+                    self.unexplored_remains -= 1;
+                }
                 self.dots[y][x] = Number(mines);
 
                 // 0 の場合は連鎖させる
@@ -61,7 +70,11 @@ impl Game {
                         }
                     }
                 }
-                Safe
+                if self.unexplored_remains == 0 {
+                    Clear
+                } else {
+                    Safe
+                }
             }
         }
     }
@@ -95,6 +108,7 @@ pub enum Dot {
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum Swept {
+    Clear,
     Safe,
     Bomb,
     Stay,
@@ -104,7 +118,7 @@ pub enum Swept {
 mod tests {
     use crate::game::Dot::{FlaggedMine, Mine, Number, Unexplored};
     use crate::game::Game;
-    use crate::game::Swept::{Bomb, Safe, Stay};
+    use crate::game::Swept::{Bomb, Clear, Safe, Stay};
 
     #[test]
     fn sweep() {
@@ -113,8 +127,8 @@ mod tests {
 
         // 未探索が 0 に更新されている
         let swept = game.sweep(0, 0);
-        assert_eq!(&Number(0), &game.dots[0][0]);
         assert_eq!(Safe, swept);
+        assert_eq!(&Number(0), &game.dots[0][0]);
 
         // 0 のマスの周囲は連鎖解放されている
         assert_eq!(&Number(0), &game.dots[0][1]);
@@ -136,5 +150,9 @@ mod tests {
         // 地雷を踏んだら終了
         let swept = game.sweep(0, 2);
         assert_eq!(Bomb, swept);
+
+        let swept = game.sweep(1, 2);
+        assert_eq!(Clear, swept);
+        assert_eq!(&Number(2), &game.dots[2][1]);
     }
 }
