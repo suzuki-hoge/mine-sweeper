@@ -1,16 +1,17 @@
-use tauri::State;
+// use tauri::State;
 
-use crate::game::{Dots, GameState};
+// use crate::game::Dot;
 
 #[tauri::command]
-pub fn foo(game: State<'_, GameState>, x: usize, y: usize) -> String {
-    println!("{:?}", (game.value));
-    let mut value = game.value.lock().unwrap();
-    *value = "end".to_string();
-    format!("foooo: {x}, {y}")
+// pub fn foo(game: State<'_, GameState>, x: usize, y: usize) -> String {
+pub fn foo() -> String {
+    // let mut value = game.value.lock().unwrap();
+    // *value = "end".to_string();
+    panic!()
 }
 
 #[tauri::command]
-pub fn init_dots(w: usize, h: usize) -> Dots {
-    Dots::init(w, h)
+pub fn init_dots() -> Vec<Vec<u64>> {
+    // Dots::init(w, h)
+    panic!()
 }
