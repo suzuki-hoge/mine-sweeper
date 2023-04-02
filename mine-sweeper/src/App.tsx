@@ -17,9 +17,7 @@ export const App: FC = () => {
         setDots(response.dots)
         setStatus('play')
       })
-      .catch((e) => {
-        console.log(e)
-      })
+      .catch(console.log)
   }
 
   const getGame: () => ReactNode = () => {
@@ -70,7 +68,8 @@ export const App: FC = () => {
         setH={setH}
         density={density}
         setDensity={setDensity}
-        disabled={status !== 'init'}
+        isPlaying={status !== 'init'}
+        setStatus={setStatus}
       />
       {getGame()}
     </div>

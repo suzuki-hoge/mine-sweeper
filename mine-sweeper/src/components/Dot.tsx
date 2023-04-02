@@ -32,9 +32,7 @@ export const Dot: FC<Props> = (props) => {
             props.setStatus('clear')
           }
         })
-        .catch((e) => {
-          console.log(e)
-        })
+        .catch(console.log)
     }
   }
 
