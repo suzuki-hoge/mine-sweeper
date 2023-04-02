@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use crate::game::Dot::{FlaggedMine, FlaggedSafe, Mine, Number, Unexplored, Wall};
+use crate::game::Dot::{FlaggedMine, FlaggedSafe, Mine, Number, Unexplored};
 use crate::game::Swept::{Bomb, Clear, Safe, Stay};
 
 #[derive(Debug)]
@@ -8,60 +8,108 @@ pub struct Game {
     w: usize,
     h: usize,
     dots: Vec<Vec<Dot>>,
-    unexplored_remains: usize,
+    collect_dots: usize,
 }
 
 impl Game {
+    // 空のインスタンスを作成する
+    pub fn new() -> Self {
+        Self {
+            w: 0,
+            h: 0,
+            dots: vec![],
+            collect_dots: 0,
+        }
+    }
+
     // 盤面を初期化する
-    pub fn init(w: usize, h: usize) -> Self {
+    pub fn init(&mut self, w: usize, h: usize) {
         let dots = vec![
             vec![Unexplored, Unexplored, Unexplored],
             vec![Unexplored, Unexplored, Unexplored],
-            vec![Mine, Unexplored, FlaggedMine],
+            vec![Mine, Unexplored, Mine],
+            // vec![FlaggedMine, Number(0), Number(1)],
+            // vec![Number(2), Number(3), Number(4)],
+            // vec![Number(5), Number(6), Number(7)],
         ];
-        Self {
-            w,
-            h,
-            dots,
-            unexplored_remains: 7,
-        }
+        self.w = w;
+        self.h = h;
+        self.dots = dots;
+        self.collect_dots = 0;
     }
 
     // 選択した箇所を更新し、選択結果を返す
     pub fn sweep(&mut self, x: usize, y: usize) -> Swept {
         match &self.dots[y][x] {
-            &Mine | &FlaggedMine => Bomb,
-            &Number(_) | &Wall => Stay,
-            &Unexplored | &FlaggedSafe => {
-                let mut mines = 0;
+            &Mine => Bomb,
+            &Number(_) | &FlaggedMine | &FlaggedSafe => Stay,
+            &Unexplored => {
+                // 正答マスを更新
+                self.collect_dots += 1;
 
+                // 周囲の地雷を数えマスを更新
+                let mut mines = 0;
                 self.rounds(x, y).iter().for_each(|&(x, y)| {
                     let dot = &self.dots[y][x];
                     if dot == &Mine || dot == &FlaggedMine {
                         mines += 1;
                     }
                 });
-
-                if &self.dots[y][x] == &Unexplored {
-                    self.unexplored_remains -= 1;
-                }
-
                 self.dots[y][x] = Number(mines);
 
-                // 0 の場合は連鎖させる
+                // 周囲の地雷が 0 の場合は解放を連鎖
                 if mines == 0 {
                     self.rounds(x, y).iter().for_each(|&(x, y)| {
-                        if &self.dots[y][x] == &Unexplored {
+                        if self.dots[y][x] == Unexplored {
                             self.sweep(x, y);
                         }
                     });
                 }
-                if self.unexplored_remains == 0 {
+
+                // クリア判定
+                if self.collect_dots == self.h * self.w {
                     Clear
                 } else {
                     Safe
                 }
             }
+        }
+    }
+
+    // 選択した箇所にフラグを立てる、立っている場合はおろす
+    pub fn flag(&mut self, x: usize, y: usize) -> Swept {
+        match self.dots[y][x] {
+            Mine => {
+                // 正答マスを更新
+                self.collect_dots += 1;
+
+                // マスを更新
+                self.dots[y][x] = FlaggedMine;
+
+                if self.is_clear() {
+                    Clear
+                } else {
+                    Safe
+                }
+            }
+            FlaggedMine => {
+                // 正答マスを更新
+                self.collect_dots -= 1;
+
+                // マスを更新
+                self.dots[y][x] = Mine;
+
+                Safe
+            }
+            Unexplored => {
+                self.dots[y][x] = FlaggedSafe;
+                Safe
+            }
+            FlaggedSafe => {
+                self.dots[y][x] = Unexplored;
+                Safe
+            }
+            _ => Stay,
         }
     }
 
@@ -75,13 +123,17 @@ impl Game {
             .collect_vec()
     }
 
+    fn is_clear(&self) -> bool {
+        self.collect_dots == self.w * self.h
+    }
+
     // Tauri が値を持つ enum を扱えないので、文字列にする
     pub fn show(&self) -> Vec<Vec<String>> {
         let mut dots = vec![vec![String::new(); self.w]; self.h];
-        for y in 1..self.h + 1 {
-            for x in 1..self.w + 1 {
-                dots[y - 1][x - 1] = match &self.dots[y][x] {
-                    &Unexplored | &Mine | &Wall => String::from(""),
+        for y in 0..dots.len() {
+            for x in 0..dots[0].len() {
+                dots[y][x] = match &self.dots[y][x] {
+                    &Unexplored | &Mine => String::from(""),
                     &FlaggedSafe | &FlaggedMine => String::from("flag"),
                     &Number(n) => n.to_string(),
                 };
@@ -93,7 +145,6 @@ impl Game {
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum Dot {
-    Wall,
     Unexplored,
     FlaggedSafe,
     FlaggedMine,
@@ -103,21 +154,22 @@ pub enum Dot {
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum Swept {
-    Clear,
     Safe,
     Bomb,
     Stay,
+    Clear,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::game::Dot::{FlaggedMine, Mine, Number, Unexplored};
+    use crate::game::Dot::{FlaggedMine, FlaggedSafe, Mine, Number, Unexplored};
     use crate::game::Game;
     use crate::game::Swept::{Bomb, Clear, Safe, Stay};
 
     #[test]
     fn rounds_center() {
-        let mut game = Game::init(3, 3);
+        let mut game = Game::new();
+        game.init(3, 3);
 
         // 周囲 8 マスが得られる
         let mut exp = vec![];
@@ -129,7 +181,8 @@ mod tests {
 
     #[test]
     fn rounds_left_top() {
-        let mut game = Game::init(3, 3);
+        let mut game = Game::new();
+        game.init(3, 3);
 
         // 左端と上端は返されない
         assert_eq!(vec![(0, 1), (1, 0), (1, 1),], game.rounds(0, 0));
@@ -137,7 +190,8 @@ mod tests {
 
     #[test]
     fn rounds_right_bottom() {
-        let mut game = Game::init(3, 3);
+        let mut game = Game::new();
+        game.init(3, 3);
 
         // 右端と下端は返されない
         assert_eq!(vec![(1, 1), (1, 2), (2, 1),], game.rounds(2, 2))
@@ -145,8 +199,14 @@ mod tests {
 
     #[test]
     fn sweep() {
-        let mut game = Game::init(3, 3);
+        let mut game = Game::new();
+        game.init(3, 3);
         assert_eq!(&Unexplored, &game.dots[0][0]);
+
+        // フラグを立てられる
+        let swept = game.flag(2, 2);
+        assert_eq!(Safe, swept);
+        assert_eq!(&FlaggedMine, &game.dots[2][2]);
 
         // 未探索が 0 に更新されている
         let swept = game.sweep(0, 0);
@@ -174,9 +234,32 @@ mod tests {
         let swept = game.sweep(0, 2);
         assert_eq!(Bomb, swept);
 
-        // 地雷以外の全てを解放したら終了
+        // 全てのマスを正しく対処できたらクリア
         let swept = game.sweep(1, 2);
-        assert_eq!(Clear, swept);
+        assert_eq!(Safe, swept);
         assert_eq!(&Number(2), &game.dots[2][1]);
+        let swept = game.flag(0, 2);
+        assert_eq!(Clear, swept);
+        assert_eq!(&FlaggedMine, &game.dots[2][0]);
+    }
+
+    #[test]
+    fn flag() {
+        let mut game = Game::new();
+        game.init(3, 3);
+
+        // 未探索マスをフラグでトグルできる
+        assert_eq!(&Unexplored, &game.dots[0][0]);
+        game.flag(0, 0);
+        assert_eq!(&FlaggedSafe, &game.dots[0][0]);
+        game.flag(0, 0);
+        assert_eq!(&Unexplored, &game.dots[0][0]);
+
+        // 地雷をフラグでトグルできる
+        assert_eq!(&Mine, &game.dots[2][0]);
+        game.flag(0, 2);
+        assert_eq!(&FlaggedMine, &game.dots[2][0]);
+        game.flag(0, 2);
+        assert_eq!(&Mine, &game.dots[2][0]);
     }
 }

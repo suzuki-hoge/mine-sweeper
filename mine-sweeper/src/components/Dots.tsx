@@ -1,11 +1,13 @@
 import './Dots.css'
 import { Dot } from './Dot'
 import { type FC } from 'react'
-import { type DotValue } from '../type'
+import { type DotValue, type StatusValue } from '../type'
 
 interface Props {
   dots: DotValue[][]
   setDots: (ds: DotValue[][]) => void
+  setStatus: (s: StatusValue) => void
+  disabled: boolean
 }
 
 export const Dots: FC<Props> = (props) => {
@@ -20,6 +22,8 @@ export const Dots: FC<Props> = (props) => {
               x={x}
               y={y}
               setDots={props.setDots}
+              setStatus={props.setStatus}
+              disabled={props.disabled}
             />
           ))}
         </div>

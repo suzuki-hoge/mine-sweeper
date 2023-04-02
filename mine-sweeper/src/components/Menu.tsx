@@ -9,6 +9,7 @@ interface Props {
   setH: (n: number) => void
   density: DensityValue
   setDensity: (d: DensityValue) => void
+  disabled: boolean
 }
 
 export const Menu: FC<Props> = (props) => {
@@ -23,6 +24,7 @@ export const Menu: FC<Props> = (props) => {
         onChange={(e) => {
           props.setW(parseInt(e.target.value))
         }}
+        disabled={props.disabled}
       />
 
       <input
@@ -34,6 +36,7 @@ export const Menu: FC<Props> = (props) => {
         onChange={(e) => {
           props.setH(parseInt(e.target.value))
         }}
+        disabled={props.disabled}
       />
 
       <select
@@ -41,6 +44,7 @@ export const Menu: FC<Props> = (props) => {
         onChange={(e) => {
           props.setDensity(e.target.value as DensityValue)
         }}
+        disabled={props.disabled}
       >
         <option value="low">地雷すくなめ</option>
         <option value="middle">地雷ほどほど</option>

@@ -1,18 +1,20 @@
-// use std::sync::Mutex;
+use tauri::Manager;
 
-// use tauri::Manager;
+use crate::command::GameState;
 
 mod command;
 mod game;
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![command::foo, command::init_dots])
+        .invoke_handler(tauri::generate_handler![
+            command::init_game,
+            command::sweep,
+            command::flag
+        ])
         .setup(|app| {
-            // let game = GameState {
-            //     value: Mutex::new(String::from("start")),
-            // };
-            // app.manage(game);
+            let state = GameState::new();
+            app.manage(state);
             Ok(())
         })
         .run(tauri::generate_context!())

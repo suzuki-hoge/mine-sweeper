@@ -1,23 +1,64 @@
-import { type FC, useState } from 'react'
+import { type FC, type ReactNode, useState } from 'react'
 import { Dots } from './components/Dots'
 import { Menu } from './components/Menu'
-import { type DensityValue, type DotValue, type StateValue } from './type'
+import { type DensityValue, type DotValue, type StatusValue } from './type'
 import { invoke } from '@tauri-apps/api/tauri'
 
 export const App: FC = () => {
-  const [state, setState] = useState<StateValue>('init')
+  const [status, setStatus] = useState<StatusValue>('init')
   const [w, setW] = useState(10)
   const [h, setH] = useState(10)
   const [density, setDensity] = useState<DensityValue>('middle')
   const [dots, setDots] = useState<DotValue[][]>([])
 
-  const initDots: () => void = () => {
-    invoke<{ dots: DotValue[][] }>('init_dots', { w, h })
+  const initGame: () => void = () => {
+    invoke<{ dots: DotValue[][] }>('init_game', { w, h })
       .then((response) => {
         setDots(response.dots)
-        setState('play')
+        setStatus('play')
       })
-      .catch(() => {})
+      .catch((e) => {
+        console.log(e)
+      })
+  }
+
+  const getGame: () => ReactNode = () => {
+    if (status === 'init') {
+      return <button onClick={initGame}>Start</button>
+    } else if (status === 'play') {
+      return (
+        <Dots
+          dots={dots}
+          setDots={setDots}
+          setStatus={setStatus}
+          disabled={false}
+        />
+      )
+    } else if (status === 'bomb') {
+      return (
+        <>
+          <Dots
+            dots={dots}
+            setDots={setDots}
+            setStatus={setStatus}
+            disabled={true}
+          />
+          <p>Game Over</p>
+        </>
+      )
+    } else if (status === 'clear') {
+      return (
+        <>
+          <Dots
+            dots={dots}
+            setDots={setDots}
+            setStatus={setStatus}
+            disabled={true}
+          />
+          <p>All Clear</p>
+        </>
+      )
+    }
   }
 
   return (
@@ -29,19 +70,9 @@ export const App: FC = () => {
         setH={setH}
         density={density}
         setDensity={setDensity}
+        disabled={status !== 'init'}
       />
-      {state === 'init' ? (
-        <button
-          onClick={() => {
-            initDots()
-          }}
-        >
-          Start
-        </button>
-      ) : (
-        <></>
-      )}
-      {state === 'play' ? <Dots dots={dots} setDots={setDots} /> : <></>}
+      {getGame()}
     </div>
   )
 }
