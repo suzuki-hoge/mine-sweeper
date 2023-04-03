@@ -1361,6 +1361,7 @@ name = "mine-sweeper"
 version = "0.0.0"
 dependencies = [
  "itertools",
+ "rand 0.8.5",
  "serde",
  "serde_json",
  "tauri",

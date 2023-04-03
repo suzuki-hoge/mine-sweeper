@@ -3,6 +3,7 @@ use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
+use crate::game::Density::{High, Low, Middle};
 use crate::game::Swept::{Bomb, Clear, Safe, Stay};
 use crate::game::{Game, Swept};
 
@@ -30,9 +31,15 @@ pub struct DotsAndSweptJson {
 }
 
 #[tauri::command]
-pub fn init_game(state: State<'_, GameState>, _w: usize, _h: usize) -> DotsJson {
+pub fn init_game(state: State<'_, GameState>, w: usize, h: usize, density: String) -> DotsJson {
     let mut game = state.game.lock().unwrap();
-    game.init(3, 3);
+    let density = match density.as_str() {
+        "low" => Low,
+        "middle" => Middle,
+        "high" => High,
+        _ => panic!(),
+    };
+    game.init(w, h, density);
     DotsJson { dots: game.show() }
 }
 

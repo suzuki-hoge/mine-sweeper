@@ -1,5 +1,7 @@
 use itertools::Itertools;
+use rand::Rng;
 
+use crate::game::Density::{High, Low, Middle};
 use crate::game::Dot::{FlaggedMine, FlaggedSafe, Mine, Number, Unexplored};
 use crate::game::Swept::{Bomb, Clear, Safe, Stay};
 
@@ -23,19 +25,50 @@ impl Game {
     }
 
     // 盤面を初期化する
-    pub fn init(&mut self, w: usize, h: usize) {
+    #[cfg(test)]
+    pub fn init(&mut self, w: usize, h: usize, _density: Density) {
         let dots = vec![
             vec![Unexplored, Unexplored, Unexplored],
             vec![Unexplored, Unexplored, Unexplored],
             vec![Mine, Unexplored, Mine],
-            // vec![FlaggedMine, Number(0), Number(1)],
-            // vec![Number(2), Number(3), Number(4)],
-            // vec![Number(5), Number(6), Number(7)],
+            // vec![FlaggedMine, Number(0), Number(1), Number(2)],
+            // vec![Number(3), Number(4), Number(5), Number(6)],
+            // vec![Number(7), Number(8), Unexplored, Mine],
         ];
         self.w = w;
         self.h = h;
         self.dots = dots;
         self.collect_dots = 0;
+    }
+
+    // 盤面を初期化する
+    #[cfg(not(test))]
+    pub fn init(&mut self, w: usize, h: usize, density: Density) {
+        let mut dots = vec![vec![Unexplored; w]; h];
+        Game::mines(w, h, density)
+            .iter()
+            .for_each(|&(x, y)| dots[y][x] = Mine);
+        self.w = w;
+        self.h = h;
+        self.dots = dots;
+        self.collect_dots = 0;
+    }
+
+    fn mines(w: usize, h: usize, density: Density) -> Vec<(usize, usize)> {
+        let ratio = match density {
+            Low => 10,
+            Middle => 30,
+            High => 60,
+        };
+        let count = (((w * h * ratio) as f64) / 100.0).ceil() as usize;
+        let mut rng = rand::thread_rng();
+        (0..count)
+            .map(|_| {
+                let n = rng.gen_range(0..w * h);
+                (n % w, n / w)
+            })
+            .unique()
+            .collect_vec()
     }
 
     // 選択した箇所を更新し、選択結果を返す
@@ -143,7 +176,7 @@ impl Game {
     }
 }
 
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub enum Dot {
     Unexplored,
     FlaggedSafe,
@@ -160,8 +193,16 @@ pub enum Swept {
     Clear,
 }
 
+#[derive(Eq, PartialEq)]
+pub enum Density {
+    Low,
+    Middle,
+    High,
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::game::Density::{High, Low, Middle};
     use crate::game::Dot::{FlaggedMine, FlaggedSafe, Mine, Number, Unexplored};
     use crate::game::Game;
     use crate::game::Swept::{Bomb, Clear, Safe, Stay};
@@ -169,7 +210,7 @@ mod tests {
     #[test]
     fn rounds_center() {
         let mut game = Game::new();
-        game.init(3, 3);
+        game.init(3, 3, Low);
 
         // 周囲 8 マスが得られる
         let mut exp = vec![];
@@ -182,7 +223,7 @@ mod tests {
     #[test]
     fn rounds_left_top() {
         let mut game = Game::new();
-        game.init(3, 3);
+        game.init(3, 3, Low);
 
         // 左端と上端は返されない
         assert_eq!(vec![(0, 1), (1, 0), (1, 1),], game.rounds(0, 0));
@@ -191,7 +232,7 @@ mod tests {
     #[test]
     fn rounds_right_bottom() {
         let mut game = Game::new();
-        game.init(3, 3);
+        game.init(3, 3, Low);
 
         // 右端と下端は返されない
         assert_eq!(vec![(1, 1), (1, 2), (2, 1),], game.rounds(2, 2))
@@ -200,7 +241,7 @@ mod tests {
     #[test]
     fn sweep() {
         let mut game = Game::new();
-        game.init(3, 3);
+        game.init(3, 3, Low);
         assert_eq!(&Unexplored, &game.dots[0][0]);
 
         // フラグを立てられる
@@ -246,7 +287,7 @@ mod tests {
     #[test]
     fn flag() {
         let mut game = Game::new();
-        game.init(3, 3);
+        game.init(3, 3, Low);
 
         // 未探索マスをフラグでトグルできる
         assert_eq!(&Unexplored, &game.dots[0][0]);
@@ -261,5 +302,44 @@ mod tests {
         assert_eq!(&FlaggedMine, &game.dots[2][0]);
         game.flag(0, 2);
         assert_eq!(&Mine, &game.dots[2][0]);
+    }
+
+    #[test]
+    fn mines() {
+        for _ in 0..10 {
+            let mines = Game::mines(30, 5, Low);
+            assert!(mines.len() <= 15);
+            assert!(mines.iter().map(|(x, _)| x).max().unwrap() < &30);
+        }
+        for _ in 0..10 {
+            let mines = Game::mines(5, 30, Low);
+            assert!(mines.len() <= 15);
+            assert!(mines.iter().map(|(_, y)| y).max().unwrap() < &30);
+        }
+        for _ in 0..10 {
+            let mines = Game::mines(5, 5, Low);
+            assert!(!mines.is_empty());
+            assert!(mines.len() <= 3);
+        }
+        for _ in 0..10 {
+            let mines = Game::mines(5, 5, Middle);
+            assert!(mines.len() <= 8);
+        }
+        for _ in 0..10 {
+            let mines = Game::mines(5, 5, High);
+            assert!(mines.len() <= 14);
+        }
+        for _ in 0..100 {
+            let mines = Game::mines(30, 30, Low);
+            assert!(mines.len() <= 90);
+        }
+        for _ in 0..100 {
+            let mines = Game::mines(30, 30, Middle);
+            assert!(mines.len() <= 270);
+        }
+        for _ in 0..100 {
+            let mines = Game::mines(30, 30, High);
+            assert!(mines.len() <= 540);
+        }
     }
 }
