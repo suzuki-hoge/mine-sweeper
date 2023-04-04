@@ -12,7 +12,7 @@ export const App: FC = () => {
   const [dots, setDots] = useState<DotValue[][]>([])
 
   const initGame: () => void = () => {
-    invoke<{ dots: DotValue[][] }>('init_game', { w, h, density })
+    invoke<{ dots: DotValue[][] }>('configure', { w, h, density })
       .then((response) => {
         setDots(response.dots)
         setStatus('play')

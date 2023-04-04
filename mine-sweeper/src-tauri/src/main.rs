@@ -8,7 +8,8 @@ mod game;
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            command::init_game,
+            command::new,
+            command::configure,
             command::sweep,
             command::flag
         ])

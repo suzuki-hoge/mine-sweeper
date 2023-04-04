@@ -1,6 +1,7 @@
 import './Menu.css'
 import { type FC } from 'react'
 import { type DensityValue, type StatusValue } from '../type'
+import { invoke } from '@tauri-apps/api/tauri'
 
 interface Props {
   w: number
@@ -14,6 +15,14 @@ interface Props {
 }
 
 export const Menu: FC<Props> = (props) => {
+  const newGame: () => void = () => {
+    invoke('new', {})
+      .then(() => {
+        props.setStatus('init')
+      })
+      .catch(console.log)
+  }
+
   return (
     <div className="menu">
       <input
@@ -55,9 +64,7 @@ export const Menu: FC<Props> = (props) => {
       <input
         type="button"
         value="Reset"
-        onClick={(e) => {
-          props.setStatus('init')
-        }}
+        onClick={newGame}
         disabled={!props.isPlaying}
       />
     </div>

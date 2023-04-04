@@ -31,7 +31,13 @@ pub struct DotsAndSweptJson {
 }
 
 #[tauri::command]
-pub fn init_game(state: State<'_, GameState>, w: usize, h: usize, density: String) -> DotsJson {
+pub fn new(state: State<'_, GameState>) {
+    let mut game = state.game.lock().unwrap();
+    *game = Game::new();
+}
+
+#[tauri::command]
+pub fn configure(state: State<'_, GameState>, w: usize, h: usize, density: String) -> DotsJson {
     let mut game = state.game.lock().unwrap();
     let density = match density.as_str() {
         "low" => Low,
@@ -39,7 +45,7 @@ pub fn init_game(state: State<'_, GameState>, w: usize, h: usize, density: Strin
         "high" => High,
         _ => panic!(),
     };
-    game.init(w, h, density);
+    game.configure(w, h, density);
     DotsJson { dots: game.show() }
 }
 

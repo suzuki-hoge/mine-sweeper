@@ -9,7 +9,9 @@ use crate::game::Swept::{Bomb, Clear, Safe, Stay};
 pub struct Game {
     w: usize,
     h: usize,
+    density: Density,
     dots: Vec<Vec<Dot>>,
+    is_scattered: bool,
     collect_dots: usize,
 }
 
@@ -19,14 +21,26 @@ impl Game {
         Self {
             w: 0,
             h: 0,
+            density: Low,
             dots: vec![],
+            is_scattered: false,
             collect_dots: 0,
         }
     }
 
-    // 盤面を初期化する
+    // 盤面を初期化する ( 地雷は設置しない )
+    pub fn configure(&mut self, w: usize, h: usize, density: Density) {
+        self.w = w;
+        self.h = h;
+        self.dots = vec![vec![Unexplored; w]; h];
+        self.is_scattered = false;
+        self.density = density;
+        self.collect_dots = 0;
+    }
+
+    // 地雷を生成する ( 固定値 )
     #[cfg(test)]
-    pub fn init(&mut self, w: usize, h: usize, _density: Density) {
+    fn put_mines(&mut self, _x: usize, _y: usize) {
         let dots = vec![
             vec![Unexplored, Unexplored, Unexplored],
             vec![Unexplored, Unexplored, Unexplored],
@@ -35,27 +49,28 @@ impl Game {
             // vec![Number(3), Number(4), Number(5), Number(6)],
             // vec![Number(7), Number(8), Unexplored, Mine],
         ];
-        self.w = w;
-        self.h = h;
         self.dots = dots;
-        self.collect_dots = 0;
+        self.is_scattered = true;
     }
 
-    // 盤面を初期化する
+    // 割合に応じて地雷を生成する ( 初手に選択したマスが地雷だったら再生成する
     #[cfg(not(test))]
-    pub fn init(&mut self, w: usize, h: usize, density: Density) {
-        let mut dots = vec![vec![Unexplored; w]; h];
-        Game::mines(w, h, density)
+    fn put_mines(&mut self, x: usize, y: usize) {
+        let mut dots = vec![vec![Unexplored; self.w]; self.h];
+        Game::get_scatter_mines(self.w, self.h, &self.density)
             .iter()
             .for_each(|&(x, y)| dots[y][x] = Mine);
-        self.w = w;
-        self.h = h;
+
+        if dots[y][x] == Mine {
+            self.put_mines(x, y)
+        }
+
         self.dots = dots;
-        self.collect_dots = 0;
+        self.is_scattered = true;
     }
 
-    fn mines(w: usize, h: usize, density: Density) -> Vec<(usize, usize)> {
-        let ratio = match density {
+    fn get_scatter_mines(w: usize, h: usize, density: &Density) -> Vec<(usize, usize)> {
+        let ratio = match *density {
             Low => 10,
             Middle => 30,
             High => 60,
@@ -73,6 +88,11 @@ impl Game {
 
     // 選択した箇所を更新し、選択結果を返す
     pub fn sweep(&mut self, x: usize, y: usize) -> Swept {
+        // クリックしたタイミングで地雷を生成する
+        if !self.is_scattered {
+            self.put_mines(x, y);
+        }
+
         match &self.dots[y][x] {
             &Mine => Bomb,
             &Number(_) | &FlaggedMine | &FlaggedSafe => Stay,
@@ -111,6 +131,11 @@ impl Game {
 
     // 選択した箇所にフラグを立てる、立っている場合はおろす
     pub fn flag(&mut self, x: usize, y: usize) -> Swept {
+        // 初手にフラグを立てることはできない
+        if !self.is_scattered {
+            return Stay;
+        }
+
         match self.dots[y][x] {
             Mine => {
                 // 正答マスを更新
@@ -162,6 +187,12 @@ impl Game {
 
     // Tauri が値を持つ enum を扱えないので、文字列にする
     pub fn show(&self) -> Vec<Vec<String>> {
+        // console debug
+        for row in &self.dots {
+            println!("{:?}", row.iter().map(|dot| dot.dbg()).join(""));
+        }
+        println!("{:?}", "-".repeat(self.w));
+
         let mut dots = vec![vec![String::new(); self.w]; self.h];
         for y in 0..dots.len() {
             for x in 0..dots[0].len() {
@@ -185,6 +216,18 @@ pub enum Dot {
     Number(u64),
 }
 
+impl Dot {
+    fn dbg(&self) -> String {
+        match &self {
+            Unexplored => " ".to_string(),
+            FlaggedSafe => "f".to_string(),
+            FlaggedMine => "F".to_string(),
+            Mine => "M".to_string(),
+            Number(n) => n.to_string(),
+        }
+    }
+}
+
 #[derive(Eq, PartialEq, Debug)]
 pub enum Swept {
     Safe,
@@ -193,7 +236,7 @@ pub enum Swept {
     Clear,
 }
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Debug)]
 pub enum Density {
     Low,
     Middle,
@@ -210,7 +253,7 @@ mod tests {
     #[test]
     fn rounds_center() {
         let mut game = Game::new();
-        game.init(3, 3, Low);
+        game.configure(3, 3, Low);
 
         // 周囲 8 マスが得られる
         let mut exp = vec![];
@@ -223,7 +266,7 @@ mod tests {
     #[test]
     fn rounds_left_top() {
         let mut game = Game::new();
-        game.init(3, 3, Low);
+        game.configure(3, 3, Low);
 
         // 左端と上端は返されない
         assert_eq!(vec![(0, 1), (1, 0), (1, 1),], game.rounds(0, 0));
@@ -232,7 +275,7 @@ mod tests {
     #[test]
     fn rounds_right_bottom() {
         let mut game = Game::new();
-        game.init(3, 3, Low);
+        game.configure(3, 3, Low);
 
         // 右端と下端は返されない
         assert_eq!(vec![(1, 1), (1, 2), (2, 1),], game.rounds(2, 2))
@@ -241,18 +284,22 @@ mod tests {
     #[test]
     fn sweep() {
         let mut game = Game::new();
-        game.init(3, 3, Low);
+        game.configure(3, 3, Low);
         assert_eq!(&Unexplored, &game.dots[0][0]);
 
-        // フラグを立てられる
+        // 初手はフラグを立てられない
         let swept = game.flag(2, 2);
-        assert_eq!(Safe, swept);
-        assert_eq!(&FlaggedMine, &game.dots[2][2]);
+        assert_eq!(Stay, swept);
 
         // 未探索が 0 に更新されている
         let swept = game.sweep(0, 0);
         assert_eq!(Safe, swept);
         assert_eq!(&Number(0), &game.dots[0][0]);
+
+        // フラグを立てられる
+        let swept = game.flag(2, 2);
+        assert_eq!(Safe, swept);
+        assert_eq!(&FlaggedMine, &game.dots[2][2]);
 
         // 0 のマスの周囲は連鎖解放されている
         assert_eq!(&Number(0), &game.dots[0][1]);
@@ -287,10 +334,11 @@ mod tests {
     #[test]
     fn flag() {
         let mut game = Game::new();
-        game.init(3, 3, Low);
+        game.configure(3, 3, Low);
+        assert_eq!(&Unexplored, &game.dots[0][0]);
+        game.sweep(1, 2);
 
         // 未探索マスをフラグでトグルできる
-        assert_eq!(&Unexplored, &game.dots[0][0]);
         game.flag(0, 0);
         assert_eq!(&FlaggedSafe, &game.dots[0][0]);
         game.flag(0, 0);
@@ -307,38 +355,38 @@ mod tests {
     #[test]
     fn mines() {
         for _ in 0..10 {
-            let mines = Game::mines(30, 5, Low);
+            let mines = Game::get_scatter_mines(30, 5, &Low);
             assert!(mines.len() <= 15);
             assert!(mines.iter().map(|(x, _)| x).max().unwrap() < &30);
         }
         for _ in 0..10 {
-            let mines = Game::mines(5, 30, Low);
+            let mines = Game::get_scatter_mines(5, 30, &Low);
             assert!(mines.len() <= 15);
             assert!(mines.iter().map(|(_, y)| y).max().unwrap() < &30);
         }
         for _ in 0..10 {
-            let mines = Game::mines(5, 5, Low);
+            let mines = Game::get_scatter_mines(5, 5, &Low);
             assert!(!mines.is_empty());
             assert!(mines.len() <= 3);
         }
         for _ in 0..10 {
-            let mines = Game::mines(5, 5, Middle);
+            let mines = Game::get_scatter_mines(5, 5, &Middle);
             assert!(mines.len() <= 8);
         }
         for _ in 0..10 {
-            let mines = Game::mines(5, 5, High);
-            assert!(mines.len() <= 14);
+            let mines = Game::get_scatter_mines(5, 5, &High);
+            assert!(mines.len() <= 15);
         }
         for _ in 0..100 {
-            let mines = Game::mines(30, 30, Low);
+            let mines = Game::get_scatter_mines(30, 30, &Low);
             assert!(mines.len() <= 90);
         }
         for _ in 0..100 {
-            let mines = Game::mines(30, 30, Middle);
+            let mines = Game::get_scatter_mines(30, 30, &Middle);
             assert!(mines.len() <= 270);
         }
         for _ in 0..100 {
-            let mines = Game::mines(30, 30, High);
+            let mines = Game::get_scatter_mines(30, 30, &High);
             assert!(mines.len() <= 540);
         }
     }
