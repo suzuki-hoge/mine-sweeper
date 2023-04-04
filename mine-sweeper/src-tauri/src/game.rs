@@ -53,7 +53,7 @@ impl Game {
         self.is_scattered = true;
     }
 
-    // 割合に応じて地雷を生成する ( 初手に選択したマスが地雷だったら再生成する
+    // 地雷を設置する ( 初手に選択したマスが地雷だったら再生成する )
     #[cfg(not(test))]
     fn put_mines(&mut self, x: usize, y: usize) {
         let mut dots = vec![vec![Unexplored; self.w]; self.h];
@@ -69,11 +69,12 @@ impl Game {
         self.is_scattered = true;
     }
 
+    // 割合に応じた地雷の座標を決定する
     fn get_scatter_mines(w: usize, h: usize, density: &Density) -> Vec<(usize, usize)> {
         let ratio = match *density {
-            Low => 10,
-            Middle => 30,
-            High => 60,
+            Low => 5,
+            Middle => 10,
+            High => 20,
         };
         let count = (((w * h * ratio) as f64) / 100.0).ceil() as usize;
         let mut rng = rand::thread_rng();
@@ -171,6 +172,7 @@ impl Game {
         }
     }
 
+    // 指定のマスの周囲の座標を得る
     fn rounds(&self, x: usize, y: usize) -> Vec<(usize, usize)> {
         let (x, y, w, h) = (x as i64, y as i64, self.w as i64, self.h as i64);
         (-1..=1_i64)
@@ -181,6 +183,7 @@ impl Game {
             .collect_vec()
     }
 
+    // 全てのマスが正しく更新できているか判定する
     fn is_clear(&self) -> bool {
         self.collect_dots == self.w * self.h
     }
@@ -355,39 +358,39 @@ mod tests {
     #[test]
     fn mines() {
         for _ in 0..10 {
-            let mines = Game::get_scatter_mines(30, 5, &Low);
-            assert!(mines.len() <= 15);
-            assert!(mines.iter().map(|(x, _)| x).max().unwrap() < &30);
-        }
-        for _ in 0..10 {
-            let mines = Game::get_scatter_mines(5, 30, &Low);
-            assert!(mines.len() <= 15);
-            assert!(mines.iter().map(|(_, y)| y).max().unwrap() < &30);
-        }
-        for _ in 0..10 {
             let mines = Game::get_scatter_mines(5, 5, &Low);
             assert!(!mines.is_empty());
-            assert!(mines.len() <= 3);
+            assert!(mines.len() <= 2);
         }
         for _ in 0..10 {
             let mines = Game::get_scatter_mines(5, 5, &Middle);
-            assert!(mines.len() <= 8);
+            assert!(mines.len() <= 3);
         }
         for _ in 0..10 {
             let mines = Game::get_scatter_mines(5, 5, &High);
-            assert!(mines.len() <= 15);
+            assert!(mines.len() <= 5);
+        }
+        for _ in 0..10 {
+            let mines = Game::get_scatter_mines(30, 5, &Low);
+            assert!(mines.len() <= 8);
+            assert!(mines.iter().map(|(x, _)| *x).max().unwrap() < 30);
+        }
+        for _ in 0..10 {
+            let mines = Game::get_scatter_mines(5, 30, &Low);
+            assert!(mines.len() <= 8);
+            assert!(mines.iter().map(|(_, y)| *y).max().unwrap() < 30);
         }
         for _ in 0..100 {
             let mines = Game::get_scatter_mines(30, 30, &Low);
-            assert!(mines.len() <= 90);
+            assert!(mines.len() <= 50);
         }
         for _ in 0..100 {
             let mines = Game::get_scatter_mines(30, 30, &Middle);
-            assert!(mines.len() <= 270);
+            assert!(mines.len() <= 90);
         }
         for _ in 0..100 {
             let mines = Game::get_scatter_mines(30, 30, &High);
-            assert!(mines.len() <= 540);
+            assert!(mines.len() <= 180);
         }
     }
 }
