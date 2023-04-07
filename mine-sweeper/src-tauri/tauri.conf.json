@@ -39,10 +39,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "resizable": true,
+        "resizable": false,
         "title": "mine-sweeper",
-        "width": 800,
-        "height": 600
+        "width": 930,
+        "height": 780
       }
     ]
   }

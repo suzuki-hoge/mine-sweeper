@@ -1,5 +1,7 @@
 export type StatusValue = 'init' | 'play' | 'bomb' | 'clear'
 
+export type SizeValue = 'small' | 'middle' | 'large'
+
 export type DensityValue = 'low' | 'middle' | 'high'
 
 export type DotValue =

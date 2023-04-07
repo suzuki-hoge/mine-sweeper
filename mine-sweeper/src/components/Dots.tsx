@@ -7,7 +7,7 @@ interface Props {
   dots: DotValue[][]
   setDots: (ds: DotValue[][]) => void
   setStatus: (s: StatusValue) => void
-  disabled: boolean
+  isPlaying: boolean
 }
 
 export const Dots: FC<Props> = (props) => {
@@ -23,7 +23,7 @@ export const Dots: FC<Props> = (props) => {
               y={y}
               setDots={props.setDots}
               setStatus={props.setStatus}
-              disabled={props.disabled}
+              isPlaying={props.isPlaying}
             />
           ))}
         </div>

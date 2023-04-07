@@ -37,8 +37,14 @@ pub fn new(state: State<'_, GameState>) {
 }
 
 #[tauri::command]
-pub fn configure(state: State<'_, GameState>, w: usize, h: usize, density: String) -> DotsJson {
+pub fn configure(state: State<'_, GameState>, size: String, density: String) -> DotsJson {
     let mut game = state.game.lock().unwrap();
+    let (w, h) = match size.as_str() {
+        "small" => (5, 5),
+        "middle" => (10, 10),
+        "large" => (20, 20),
+        _ => panic!(),
+    };
     let density = match density.as_str() {
         "low" => Low,
         "middle" => Middle,

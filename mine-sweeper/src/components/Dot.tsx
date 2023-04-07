@@ -9,7 +9,7 @@ interface Props {
   y: number
   setDots: (dots: DotValue[][]) => void
   setStatus: (s: StatusValue) => void
-  disabled: boolean
+  isPlaying: boolean
 }
 
 export const Dot: FC<Props> = (props) => {
@@ -19,7 +19,7 @@ export const Dot: FC<Props> = (props) => {
     // disable os context menu
     e.preventDefault()
 
-    if (!props.disabled) {
+    if (props.isPlaying) {
       invoke<{ swept: SweptValue; dots: DotValue[][] }>(
         e.type === 'click' ? 'sweep' : 'flag',
         { x: props.x, y: props.y }
@@ -42,7 +42,7 @@ export const Dot: FC<Props> = (props) => {
       onClick={click}
       onContextMenu={click}
     >
-      {props.dot === 'flag' ? '▶' : props.dot}
+      {props.dot === 'flag' ? '⚑' : props.dot === '0' ? '' : props.dot}
     </div>
   )
 }

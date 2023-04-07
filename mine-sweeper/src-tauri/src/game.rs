@@ -45,9 +45,6 @@ impl Game {
             vec![Unexplored, Unexplored, Unexplored],
             vec![Unexplored, Unexplored, Unexplored],
             vec![Mine, Unexplored, Mine],
-            // vec![FlaggedMine, Number(0), Number(1), Number(2)],
-            // vec![Number(3), Number(4), Number(5), Number(6)],
-            // vec![Number(7), Number(8), Unexplored, Mine],
         ];
         self.dots = dots;
         self.is_scattered = true;
@@ -64,6 +61,15 @@ impl Game {
         if dots[y][x] == Mine {
             self.put_mines(x, y)
         }
+
+        // // for style debugging
+        // let dots = vec![
+        //     vec![FlaggedMine, Number(0), Number(1), Number(2), Number(3)],
+        //     vec![Number(4), Number(5), Number(6), Number(7), Number(8)],
+        //     vec![FlaggedSafe, Mine, Unexplored, Unexplored, Unexplored],
+        //     vec![Unexplored, Unexplored, Unexplored, Unexplored, Unexplored],
+        //     vec![Unexplored, Unexplored, Unexplored, Unexplored, Unexplored],
+        // ];
 
         self.dots = dots;
         self.is_scattered = true;
@@ -371,26 +377,26 @@ mod tests {
             assert!(mines.len() <= 5);
         }
         for _ in 0..10 {
-            let mines = Game::get_scatter_mines(30, 5, &Low);
-            assert!(mines.len() <= 8);
-            assert!(mines.iter().map(|(x, _)| *x).max().unwrap() < 30);
+            let mines = Game::get_scatter_mines(20, 5, &Low);
+            assert!(mines.len() <= 5);
+            assert!(mines.iter().map(|(x, _)| *x).max().unwrap() < 20);
         }
         for _ in 0..10 {
-            let mines = Game::get_scatter_mines(5, 30, &Low);
-            assert!(mines.len() <= 8);
-            assert!(mines.iter().map(|(_, y)| *y).max().unwrap() < 30);
+            let mines = Game::get_scatter_mines(5, 20, &Low);
+            assert!(mines.len() <= 5);
+            assert!(mines.iter().map(|(_, y)| *y).max().unwrap() < 20);
         }
         for _ in 0..100 {
-            let mines = Game::get_scatter_mines(30, 30, &Low);
-            assert!(mines.len() <= 50);
+            let mines = Game::get_scatter_mines(20, 20, &Low);
+            assert!(mines.len() <= 20);
         }
         for _ in 0..100 {
-            let mines = Game::get_scatter_mines(30, 30, &Middle);
-            assert!(mines.len() <= 90);
+            let mines = Game::get_scatter_mines(20, 20, &Middle);
+            assert!(mines.len() <= 40);
         }
         for _ in 0..100 {
-            let mines = Game::get_scatter_mines(30, 30, &High);
-            assert!(mines.len() <= 180);
+            let mines = Game::get_scatter_mines(20, 20, &High);
+            assert!(mines.len() <= 80);
         }
     }
 }

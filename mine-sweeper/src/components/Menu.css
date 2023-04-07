@@ -1,2 +1,36 @@
 .menu {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1rem;
+  width: 150px;
+}
+
+p {
+  margin: 0;
+}
+
+.size {
+  display: flex;
+  flex-direction: column;
+}
+
+.density {
+  display: flex;
+  flex-direction: column;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  column-gap: 5px;
+}
+
+.buttons input {
+  width: 56px;
+}
+
+.state {
+  font-weight: bold;
+  padding-left: 0.5rem;
 }

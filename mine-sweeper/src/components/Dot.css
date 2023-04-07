@@ -1,40 +1,73 @@
 .dot {
   background-color: gainsboro;
-  width: 20px;
-  height: 20px;
+  border-left: solid 3px darkgray;
+  border-top: solid 3px darkgray;
+  border-right: solid 3px dimgray;
+  border-bottom: solid 3px dimgray;
+  border-radius: 1px;
+  width: 28px;
+  height: 28px;
   font-weight: bold;
   cursor: pointer;
-  border: solid 1px black;
+  font-size: 25px;
+  text-align: center;
+}
+
+.dot-flag {
+  color: red;
+  background-color: gainsboro;
+  border: solid 3px darkgray;
+}
+
+.dot-0 {
+    background-color: gainsboro;
+    border: solid 3px darkgray;
 }
 
 .dot-1 {
   color: deepskyblue;
+  background-color: gainsboro;
+  border: solid 3px darkgray;
 }
 
 .dot-2 {
-  color: lawngreen;
+  color: green;
+  background-color: gainsboro;
+  border: solid 3px darkgray;
 }
 
 .dot-3 {
-  color: burlywood;
+  color: fuchsia;
+  background-color: gainsboro;
+  border: solid 3px darkgray;
 }
 
 .dot-4 {
-  color: mediumpurple;
+  color: orangered;
+  background-color: gainsboro;
+  border: solid 3px darkgray;
 }
 
 .dot-5 {
   color: darkcyan;
+  background-color: gainsboro;
+  border: solid 3px darkgray;
 }
 
 .dot-6 {
   color: firebrick;
+  background-color: gainsboro;
+  border: solid 3px darkgray;
 }
 
 .dot-7 {
-  color: lavender;
+  color: mediumslateblue;
+  background-color: gainsboro;
+  border: solid 3px darkgray;
 }
 
 .dot-8 {
-  color: fuchsia;
+  color: chocolate;
+  background-color: gainsboro;
+  border: solid 3px darkgray;
 }

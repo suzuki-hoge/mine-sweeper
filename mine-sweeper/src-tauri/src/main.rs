@@ -1,3 +1,5 @@
+extern crate core;
+
 use tauri::Manager;
 
 use crate::command::GameState;
