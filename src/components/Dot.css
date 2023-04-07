@@ -12,6 +12,9 @@
   font-size: 25px;
   text-align: center;
 }
+.dot:hover {
+  background-color: darkgray;
+}
 
 .dot-flag {
   color: red;

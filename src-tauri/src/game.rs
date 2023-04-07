@@ -197,10 +197,11 @@ impl Game {
     // Tauri が値を持つ enum を扱えないので、文字列にする
     pub fn show(&self) -> Vec<Vec<String>> {
         // console debug
+        println!("{}", self.collect_dots);
         for row in &self.dots {
-            println!("{:?}", row.iter().map(|dot| dot.dbg()).join(""));
+            println!("{}", row.iter().map(|dot| dot.dbg()).join(""));
         }
-        println!("{:?}", "-".repeat(self.w));
+        println!("{}", "-".repeat(self.w));
 
         let mut dots = vec![vec![String::new(); self.w]; self.h];
         for y in 0..dots.len() {
